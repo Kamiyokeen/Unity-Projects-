@@ -1,0 +1,213 @@
+//using System;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+public class Game_Manager : MonoBehaviour
+{
+    // fields
+    int score;
+    string endText = "placeHolder";
+    int TPscore;
+    Color endTextColor = Color.magenta;
+    Text scoreText;
+    Text bricksText;
+    Text gameOverText;
+    Text timeText;
+    Text tpScoreText;
+
+
+
+
+
+    // properties
+
+    public bool AppIsQuitting { get; private set; }
+    public bool IsPlaying { get; set; }
+    public static Game_Manager Instance { get; private set; }
+
+
+    void Awake()
+    {
+
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else if (Instance != null)
+        {
+            //Destroy(gameObject);
+            return;
+        }
+
+        int scale = 4;
+        Screen.SetResolution(224 * scale, 256 * scale, false);
+
+        //  Project Settings > Time > fixed Time step's default is 0.02 == 1 /50
+        Time.fixedDeltaTime = 1 / 75f; // be faster / more accurate
+    }
+
+    /* Update is called once per frame
+    void  Update()
+    {
+       //TODO: disable once verified
+       if(Input.GetKeyDown(KeyCode.Escape))
+        {
+            LoadScene("End");
+        }
+    }
+    */
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        IsPlaying = false;
+        AppIsQuitting = false;
+        UpdateUI();
+    }
+    public void LoadScene(string scene)
+    {
+        SceneManager.LoadScene(scene);
+    }
+
+
+
+    public void NextScene()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+    }
+    public void QuitGame()
+    {
+        Application.Quit();
+        // https://docs.unity3d.com/Manual/PlatformDependentCompilation.html
+
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+    }
+
+
+    // ending conditions
+    public void Win()
+    {
+        SetEndTextAndColor("You win!\n Final score: " + score, Color.green);
+        NextScene();
+    }
+    public void Lose()
+    {
+        AppIsQuitting = true;
+        SetEndTextAndColor("You Lose!", Color.red);
+        LoadScene("End");
+    }
+
+    // score and ui
+    void UpdateUI()
+    {
+        Text[] texts;
+
+        texts = FindObjectsOfType<Text>();     //throw new NotImplementedException();
+        for (int i = 0; i < texts.Length; i++)
+        {
+            if (texts[i].name == "Score Text")
+            {
+                scoreText = texts[i];
+            }
+            else if (texts[i].name == "Bricks Text")
+            {
+                bricksText = texts[i];
+            }
+            else if (texts[i].name == "GameOver Text")
+            {
+                gameOverText = texts[i];
+            }
+            else if (texts[i].name == "TpScore Text")
+            {
+                tpScoreText = texts[i];
+            }
+            else if (texts[i].name == "Time Text")
+            {
+                timeText = texts[i];
+            }
+        }
+        ShowTp();
+        ShowTime();
+        ShowScore();
+        //ShowBrickCount();
+        ShowGameOver();
+    }
+
+
+    public void ModifyAndShowScore(int value, int tpvalue)
+    {
+        score += value;
+        ShowScore();
+        TPscore += tpvalue;
+
+    }
+    void ShowScore()
+    {
+        // Lose Condition here;
+        if (score == 99)
+        {
+            Lose();
+        }
+        if (scoreText)
+        {
+            scoreText.text = "Health:" + (-score + 100);
+        }
+
+
+
+
+    }
+    public void ShowTp()
+    {
+        if (tpScoreText)
+        {
+            tpScoreText.text = "Rolls:" + TPscore;
+        }
+    }
+    public void ShowTime()
+    {
+        timeText.text = "Time: " + Mathf.CeilToInt(Time.realtimeSinceStartup);
+    }
+    public void ShowBrickCount()
+    {
+        if (bricksText)
+        {
+            bricksText.text = "Bricks: " + Brick.Count;
+            //print("hi");
+        }
+    }
+    void SetEndTextAndColor(string value, Color color)
+    {
+        endText = value;
+        endTextColor = color;
+    }
+    void ShowGameOver()
+    {
+        if (gameOverText)
+        {
+            gameOverText.text = endText;
+            gameOverText.color = endTextColor;
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        AppIsQuitting = true;
+    }
+
+    void update()
+    {
+        UpdateUI();
+    }
+}
